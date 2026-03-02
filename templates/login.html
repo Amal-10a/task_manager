@@ -69,11 +69,18 @@
                 </div>
             </div>
             
-            <button type="submit" class="btn">
+<button type="submit" class="btn">
                 <i class="fas fa-sign-in-alt"></i>
                 تسجيل الدخول
             </button>
         </form>
+        
+        <div class="github-login">
+            <a href="{{ url_for('github.login') }}" class="btn btn-github">
+                <i class="fab fa-github"></i>
+                تسجيل الدخول عبر GitHub
+            </a>
+        </div>
         
         <div class="demo-info">
             <p><i class="fas fa-info-circle"></i> للتجربة: <strong>admin</strong> / <strong>admin123</strong></p>

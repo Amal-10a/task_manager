@@ -1242,3 +1242,8 @@ tr:hover {
         margin: 0 15px 0 0;
     }
 }
+
+/* GitHub Login Button */
+.github-login { margin-top: 20px; text-align: center; }
+.btn-github { background: #24292e; color: white; width: 100%; }
+.btn-github:hover { background: #1b1f23; }

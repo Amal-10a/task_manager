@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 import sqlite3
 import os
+from flask_dance.contrib.github import make_github_blueprint
+from flask_dance.consumer import flask_danceoauth2_token_session
+from flask_dance.consumer.storage import SQLiteStorage
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'task_manager_secret_key_2024'
@@ -9,12 +12,23 @@ app.secret_key = 'task_manager_secret_key_2024'
 # Database setup
 DB_NAME = "task_manager.db"
 
+# Flask-Dance GitHub OAuth setup
+github_blueprint = make_github_blueprint(
+    client_id=os.environ.get('GITHUB_CLIENT_ID', ''),
+    client_secret=os.environ.get('GITHUB_CLIENT_SECRET', ''),
+    storage=SQLiteStorage(db=DB_NAME, table_name='flask_dance_oauth')
+)
+app.register_blueprint(github_blueprint, url_prefix='/login')
+
+# Configure session for Flask-Dance
+@app.before_request
+def before_request():
+    if 'user_id' not in session and 'github_token' in session:
+        flask_danceoauth2_token_session(session)
+
 def init_db():
-    """Initialize database with tables"""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
-    # Users table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,8 +38,6 @@ def init_db():
             name TEXT NOT NULL
         )
     ''')
-    
-    # Tasks table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,20 +54,15 @@ def init_db():
             FOREIGN KEY (created_by) REFERENCES users(id)
         )
     ''')
-    
-    # Check if admin exists, if not create default admin
     cursor.execute("SELECT * FROM users WHERE username = 'admin'")
     if not cursor.fetchone():
         cursor.execute("INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)",
                        ('admin', 'admin123', 'مدير', 'المدير العام'))
-    
     conn.commit()
     conn.close()
 
-# Initialize database
 init_db()
 
-# Helper functions
 def get_db_connection():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
@@ -72,12 +79,6 @@ def get_all_employees():
     employees = conn.execute('SELECT * FROM users WHERE role = ?', ('موظف',)).fetchall()
     conn.close()
     return employees
-
-def get_all_users():
-    conn = get_db_connection()
-    users = conn.execute('SELECT * FROM users').fetchall()
-    conn.close()
-    return users
 
 def get_tasks_for_user(user_id, role):
     conn = get_db_connection()
@@ -102,13 +103,10 @@ def get_tasks_for_user(user_id, role):
     return tasks
 
 def check_expiring_tasks():
-    """Check for tasks that are about to expire or expired"""
     conn = get_db_connection()
     now = datetime.now()
     tomorrow = (now + timedelta(days=1)).strftime('%Y-%m-%d')
     today = now.strftime('%Y-%m-%d')
-    
-    # Tasks due today or tomorrow
     expiring = conn.execute('''
         SELECT t.*, u.name as assigned_to_name
         FROM tasks t
@@ -116,8 +114,6 @@ def check_expiring_tasks():
         WHERE t.status != 'مكتملة' AND t.due_date IS NOT NULL
         AND t.due_date IN (?, ?)
     ''', (today, tomorrow)).fetchall()
-    
-    # Overdue tasks
     overdue = conn.execute('''
         SELECT t.*, u.name as assigned_to_name
         FROM tasks t
@@ -125,14 +121,9 @@ def check_expiring_tasks():
         WHERE t.status != 'مكتملة' AND t.due_date IS NOT NULL
         AND t.due_date < ?
     ''', (today,)).fetchall()
-    
     conn.close()
-    return {
-        'expiring': expiring,
-        'overdue': overdue
-    }
+    return {'expiring': expiring, 'overdue': overdue}
 
-# Routes
 @app.route('/')
 def index():
     if 'user_id' not in session:
@@ -144,12 +135,10 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
         conn = get_db_connection()
         user = conn.execute('SELECT * FROM users WHERE username = ? AND password = ?',
                            (username, password)).fetchone()
         conn.close()
-        
         if user:
             session['user_id'] = user['id']
             session['username'] = user['username']
@@ -158,7 +147,6 @@ def login():
             return redirect(url_for('dashboard'))
         else:
             flash('اسم المستخدم أو كلمة المرور خطأ', 'error')
-    
     return render_template('login.html')
 
 @app.route('/logout')
@@ -170,15 +158,11 @@ def logout():
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
     user = get_user_by_id(session['user_id'])
     tasks = get_tasks_for_user(session['user_id'], session['role'])
     alerts = check_expiring_tasks()
-    
-    # Get statistics
     conn = get_db_connection()
     stats = {}
-    
     if session['role'] == 'مدير':
         stats['total_employees'] = conn.execute('SELECT COUNT(*) FROM users WHERE role = ?', ('موظف',)).fetchone()[0]
         stats['total_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks').fetchone()[0]
@@ -186,33 +170,21 @@ def dashboard():
         stats['total_employees'] = 0
         stats['total_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE assigned_to = ?', 
                                            (session['user_id'],)).fetchone()[0]
-    
-    stats['pending_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE status = ?', 
-                                          ('معلقة',)).fetchone()[0]
-    stats['in_progress_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE status = ?', 
-                                               ('قيد التنفيذ',)).fetchone()[0]
-    stats['completed_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE status = ?', 
-                                             ('مكتملة',)).fetchone()[0]
+    stats['pending_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE status = ?', ('معلقة',)).fetchone()[0]
+    stats['in_progress_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE status = ?', ('قيد التنفيذ',)).fetchone()[0]
+    stats['completed_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE status = ?', ('مكتملة',)).fetchone()[0]
     conn.close()
-    
-    return render_template('dashboard.html', 
-                          user=user, 
-                          tasks=tasks, 
-                          stats=stats,
-                          alerts=alerts)
+    return render_template('dashboard.html', user=user, tasks=tasks, stats=stats, alerts=alerts)
 
-# Employee Management (Manager only)
 @app.route('/employees', methods=['GET', 'POST'])
 def employees():
     if 'user_id' not in session or session['role'] != 'مدير':
         flash('غير مصرح لك بهذه الصفحة', 'error')
         return redirect(url_for('dashboard'))
-    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         name = request.form['name']
-        
         try:
             conn = get_db_connection()
             conn.execute('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)',
@@ -222,9 +194,7 @@ def employees():
             flash('تم إضافة الموظف بنجاح', 'success')
         except sqlite3.IntegrityError:
             flash('اسم المستخدم موجود بالفعل', 'error')
-        
         return redirect(url_for('employees'))
-    
     user = get_user_by_id(session['user_id'])
     employees_list = get_all_employees()
     return render_template('employees.html', employees=employees_list, user=user)
@@ -234,14 +204,11 @@ def delete_employee(employee_id):
     if 'user_id' not in session or session['role'] != 'مدير':
         flash('غير مصرح لك بهذه الصفحة', 'error')
         return redirect(url_for('dashboard'))
-    
     conn = get_db_connection()
-    # Delete employee tasks first
     conn.execute('DELETE FROM tasks WHERE assigned_to = ?', (employee_id,))
     conn.execute('DELETE FROM users WHERE id = ?', (employee_id,))
     conn.commit()
     conn.close()
-    
     flash('تم حذف الموظف ومهامه', 'success')
     return redirect(url_for('employees'))
 
@@ -250,7 +217,6 @@ def employee_tasks(employee_id):
     if 'user_id' not in session or session['role'] != 'مدير':
         flash('غير مصرح لك بهذه الصفحة', 'error')
         return redirect(url_for('dashboard'))
-    
     conn = get_db_connection()
     employee = conn.execute('SELECT * FROM users WHERE id = ?', (employee_id,)).fetchone()
     tasks = conn.execute('''
@@ -261,29 +227,22 @@ def employee_tasks(employee_id):
         ORDER BY t.due_date ASC
     ''', (employee_id,)).fetchall()
     conn.close()
-    
     user = get_user_by_id(session['user_id'])
     return render_template('employee_tasks.html', employee=employee, tasks=tasks, user=user)
 
-# Task Management
 @app.route('/add_task', methods=['POST'])
 def add_task():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
     title = request.form['title']
     description = request.form['description']
-    
-    # If manager, get from form; if employee, assign to themselves
     if session['role'] == 'مدير':
         assigned_to = request.form['assigned_to']
     else:
         assigned_to = session['user_id']
-    
     due_date = request.form['due_date']
     due_time = request.form['due_time']
     priority = request.form['priority']
-    
     conn = get_db_connection()
     conn.execute('''
         INSERT INTO tasks (title, description, assigned_to, due_date, due_time, priority, created_by)
@@ -291,7 +250,6 @@ def add_task():
     ''', (title, description, assigned_to, due_date, due_time, priority, session['user_id']))
     conn.commit()
     conn.close()
-    
     flash('تم إضافة المهمة بنجاح', 'success')
     return redirect(url_for('tasks'))
 
@@ -299,26 +257,20 @@ def add_task():
 def tasks():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
     employees = get_all_employees()
-    
     user = get_user_by_id(session['user_id'])
     tasks_list = get_tasks_for_user(session['user_id'], session['role'])
-    
     return render_template('tasks.html', tasks=tasks_list, employees=employees, user=user)
 
 @app.route('/update_task/<int:task_id>', methods=['POST'])
 def update_task(task_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
     status = request.form['status']
-    
     conn = get_db_connection()
     conn.execute('UPDATE tasks SET status = ? WHERE id = ?', (status, task_id))
     conn.commit()
     conn.close()
-    
     flash('تم تحديث حالة المهمة', 'success')
     return redirect(url_for('tasks'))
 
@@ -327,28 +279,23 @@ def delete_task(task_id):
     if 'user_id' not in session or session['role'] != 'مدير':
         flash('غير مصرح لك بهذه الصفحة', 'error')
         return redirect(url_for('dashboard'))
-    
     conn = get_db_connection()
     conn.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
     conn.commit()
     conn.close()
-    
     flash('تم حذف المهمة', 'success')
     return redirect(url_for('tasks'))
 
-# API for alerts
 @app.route('/api/alerts')
 def api_alerts():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
     alerts = check_expiring_tasks()
     return jsonify({
         'expiring': [dict(row) for row in alerts['expiring']],
         'overdue': [dict(row) for row in alerts['overdue']]
     })
 
-# Toggle theme
 @app.route('/toggle_theme')
 def toggle_theme():
     if 'theme' in session:
@@ -356,6 +303,31 @@ def toggle_theme():
     else:
         session['theme'] = 'dark'
     return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/github')
+def github():
+    if not github.authorized:
+        return redirect(url_for('github.login'))
+    resp = github.get('/user')
+    if resp.ok:
+        github_username = resp.json()['login']
+        conn = get_db_connection()
+        user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
+        if not user:
+            conn.execute('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)',
+                        (github_username, 'github_oauth', 'موظف', github_username))
+            conn.commit()
+            user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
+        conn.close()
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        session['role'] = user['role']
+        session['name'] = user['name']
+        session['github_token'] = session.get('github_token')
+        flash('تم تسجيل الدخول بنجاح عبر GitHub', 'success')
+        return redirect(url_for('dashboard'))
+    flash('فشل تسجيل الدخول عبر GitHub', 'error')
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
