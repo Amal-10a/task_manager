@@ -146,14 +146,18 @@ def logout():
 @app.route('/github/login')
 def github_login():
     if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
-        flash('GitHub OAuth غير مكون', 'error')
+        flash('GitHub OAuth غير مكون - يرجى إضافة المتغيرات البيئية', 'error')
         return redirect(url_for('login'))
     
-    # Generate random state for security
     import secrets
     session['github_state'] = secrets.token_hex(16)
     
-    github_auth_url = f"https://github.com/login/oauth/authorize?client_id={GITHUB_CLIENT_ID}&redirect_uri={GITHUB_REDIRECT_URI}&scope=read:user&state={session['github_state']}"
+    redirect_uri = GITHUB_REDIRECT_URI
+    if not redirect_uri:
+        flash('يرجى تكوين GITHUB_REDIRECT_URI', 'error')
+        return redirect(url_for('login'))
+    
+    github_auth_url = f"https://github.com/login/oauth/authorize?client_id={GITHUB_CLIENT_ID}&redirect_uri={redirect_uri}&scope=read:user&state={session['github_state']}"
     return redirect(github_auth_url)
 
 @app.route('/github/callback')
@@ -166,12 +170,10 @@ def github_callback():
     code = request.args.get('code')
     state = request.args.get('state')
     
-    # Verify state
     if state != session.get('github_state'):
         flash('خطأ في الأمان', 'error')
         return redirect(url_for('login'))
     
-    # Exchange code for access token
     token_url = "https://github.com/login/oauth/access_token"
     token_data = {
         'client_id': GITHUB_CLIENT_ID,
@@ -191,7 +193,6 @@ def github_callback():
         
         access_token = token_result['access_token']
         
-        # Get user info
         user_url = "https://api.github.com/user"
         user_headers = {'Authorization': f'token {access_token}'}
         user_response = requests.get(user_url, headers=user_headers)
@@ -200,7 +201,6 @@ def github_callback():
         github_username = user_data.get('login')
         github_name = user_data.get('name') or github_username
         
-        # Create or get user
         conn = get_db_connection()
         user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
         
