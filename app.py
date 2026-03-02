@@ -2,8 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 import sqlite3
 import os
-from flask_dance.contrib.github import make_github_blueprint
-from flask_dance.consumer.storage import SessionStorage
+import requests
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'task_manager_secret_key_2024'
@@ -11,13 +10,10 @@ app.secret_key = 'task_manager_secret_key_2024'
 # Database setup
 DB_NAME = "task_manager.db"
 
-# Flask-Dance GitHub OAuth setup
-github_blueprint = make_github_blueprint(
-    client_id=os.environ.get('GITHUB_CLIENT_ID', ''),
-    client_secret=os.environ.get('GITHUB_CLIENT_SECRET', ''),
-    storage=SessionStorage()
-)
-app.register_blueprint(github_blueprint, url_prefix='/login')
+# GitHub OAuth configuration
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
+GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '')
+GITHUB_REDIRECT_URI = os.environ.get('GITHUB_REDIRECT_URI', '')
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -146,6 +142,88 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/github/login')
+def github_login():
+    if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
+        flash('GitHub OAuth غير مكون', 'error')
+        return redirect(url_for('login'))
+    
+    # Generate random state for security
+    import secrets
+    session['github_state'] = secrets.token_hex(16)
+    
+    github_auth_url = f"https://github.com/login/oauth/authorize?client_id={GITHUB_CLIENT_ID}&redirect_uri={GITHUB_REDIRECT_URI}&scope=read:user&state={session['github_state']}"
+    return redirect(github_auth_url)
+
+@app.route('/github/callback')
+def github_callback():
+    error = request.args.get('error')
+    if error:
+        flash(f'خطأ من GitHub: {error}', 'error')
+        return redirect(url_for('login'))
+    
+    code = request.args.get('code')
+    state = request.args.get('state')
+    
+    # Verify state
+    if state != session.get('github_state'):
+        flash('خطأ في الأمان', 'error')
+        return redirect(url_for('login'))
+    
+    # Exchange code for access token
+    token_url = "https://github.com/login/oauth/access_token"
+    token_data = {
+        'client_id': GITHUB_CLIENT_ID,
+        'client_secret': GITHUB_CLIENT_SECRET,
+        'code': code,
+        'redirect_uri': GITHUB_REDIRECT_URI
+    }
+    token_headers = {'Accept': 'application/json'}
+    
+    try:
+        token_response = requests.post(token_url, data=token_data, headers=token_headers)
+        token_result = token_response.json()
+        
+        if 'access_token' not in token_result:
+            flash('فشل في الحصول على التوكن', 'error')
+            return redirect(url_for('login'))
+        
+        access_token = token_result['access_token']
+        
+        # Get user info
+        user_url = "https://api.github.com/user"
+        user_headers = {'Authorization': f'token {access_token}'}
+        user_response = requests.get(user_url, headers=user_headers)
+        user_data = user_response.json()
+        
+        github_username = user_data.get('login')
+        github_name = user_data.get('name') or github_username
+        
+        # Create or get user
+        conn = get_db_connection()
+        user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
+        
+        if not user:
+            conn.execute('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)',
+                        (github_username, 'github_oauth', 'موظف', github_name))
+            conn.commit()
+            user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
+        
+        conn.close()
+        
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        session['role'] = user['role']
+        session['name'] = user['name']
+        session['github_token'] = access_token
+        
+        flash('تم تسجيل الدخول بنجاح عبر GitHub', 'success')
+        return redirect(url_for('dashboard'))
+        
+    except Exception as e:
+        flash(f'خطأ: {str(e)}', 'error')
+        return redirect(url_for('login'))
 
 @app.route('/dashboard')
 def dashboard():
@@ -296,31 +374,6 @@ def toggle_theme():
     else:
         session['theme'] = 'dark'
     return redirect(request.referrer or url_for('dashboard'))
-
-@app.route('/github')
-def github():
-    if not github.authorized:
-        return redirect(url_for('github.login'))
-    resp = github.get('/user')
-    if resp.ok:
-        github_username = resp.json()['login']
-        conn = get_db_connection()
-        user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
-        if not user:
-            conn.execute('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)',
-                        (github_username, 'github_oauth', 'موظف', github_username))
-            conn.commit()
-            user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
-        conn.close()
-        session['user_id'] = user['id']
-        session['username'] = user['username']
-        session['role'] = user['role']
-        session['name'] = user['name']
-        session['github_token'] = session.get('github_token')
-        flash('تم تسجيل الدخول بنجاح عبر GitHub', 'success')
-        return redirect(url_for('dashboard'))
-    flash('فشل تسجيل الدخول عبر GitHub', 'error')
-    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
