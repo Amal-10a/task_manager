@@ -3,8 +3,7 @@ from datetime import datetime, timedelta
 import sqlite3
 import os
 from flask_dance.contrib.github import make_github_blueprint
-from flask_dance.consumer import flask_danceoauth2_token_session
-from flask_dance.consumer.storage import SQLiteStorage
+from flask_dance.consumer.storage import SessionStorage
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'task_manager_secret_key_2024'
@@ -16,15 +15,9 @@ DB_NAME = "task_manager.db"
 github_blueprint = make_github_blueprint(
     client_id=os.environ.get('GITHUB_CLIENT_ID', ''),
     client_secret=os.environ.get('GITHUB_CLIENT_SECRET', ''),
-    storage=SQLiteStorage(db=DB_NAME, table_name='flask_dance_oauth')
+    storage=SessionStorage()
 )
 app.register_blueprint(github_blueprint, url_prefix='/login')
-
-# Configure session for Flask-Dance
-@app.before_request
-def before_request():
-    if 'user_id' not in session and 'github_token' in session:
-        flask_danceoauth2_token_session(session)
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
