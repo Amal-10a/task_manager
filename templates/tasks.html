@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+  <html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المهام - إدارة المهام</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { position: relative; }
+        .network-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none; }
+        .network-bg canvas { width: 100%; height: 100%; opacity: 0.08; }
+        .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+        .sidebar { width: 280px; background: var(--card-bg); padding: 25px 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="network-bg">
+        <canvas id="networkCanvas"></canvas>
+    </div>
+    
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="شعار الشركة" class="logo-image" style="max-width: 120px; display: none;" id="companyLogo">
+                <div class="logo-icon" id="defaultIcon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <h2>إدارة المهام</h2>
+            </div>
+            
+            <div class="user-info" style="flex-direction: column; text-align: center; padding: 20px;">
+                <div class="user-avatar" style="width: 70px; height: 70px; font-size: 28px; margin-bottom: 10px;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="name" style="font-size: 16px; font-weight: 600;">{{ user.name }}</div>
+                <div class="role" style="color: var(--primary); font-size: 13px; margin-top: 5px;">{{ user.role }}</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> لوحة التحكم</a></li>
+                {% if user.role == 'مدير' %}
+                <li><a href="{{ url_for('employees') }}"><i class="fas fa-users"></i> الموظفين</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('tasks') }}" class="active"><i class="fas fa-tasks"></i> المهام</a></li>
+                <li><a href="{{ url_for('logout') }}" class="logout"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+            </ul>
+        </aside>
+        
+        <main class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-tasks" style="color: var(--primary); margin-left: 10px;"></i> المهام</h1>
+                <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Add Task Button -->
+            <div class="quick-actions">
+                <a href="#" onclick="document.getElementById('addTaskModal').style.display='flex'" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> إضافة مهمة جديدة
+                </a>
+            </div>
+            
+            <!-- Tasks Grid -->
+            {% if tasks %}
+            <div class="tasks-grid">
+                {% for task in tasks %}
+                <div class="task-card">
+                    <div class="task-header">
+                        <h4 class="task-title">{{ task.title }}</h4>
+                        <span class="priority-badge {{ 'high' if task.priority == 'عالية' else 'medium' if task.priority == 'متوسطة' else 'normal' }}">
+                            <i class="fas fa-flag"></i> {{ task.priority }}
+                        </span>
+                    </div>
+                    
+                    {% if task.description %}
+                    <p class="task-description">{{ task.description }}</p>
+                    {% endif %}
+                    
+                    <div class="task-info">
+                        <span><i class="fas fa-user"></i> {{ task.assigned_to_name }}</span>
+                        {% if task.due_date %}
+                        <span><i class="fas fa-calendar"></i> {{ task.due_date }}</span>
+                        {% endif %}
+                        {% if task.due_time %}
+                        <span><i class="fas fa-clock"></i> {{ task.due_time }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <form action="{{ url_for('update_task', task_id=task.id) }}" method="POST">
+                        <select name="status" class="status-select" onchange="this.form.submit()">
+                            <option value="معلقة" {{ 'selected' if task.status == 'معلقة' }}>معلقة</option>
+                            <option value="قيد التنفيذ" {{ 'selected' if task.status == 'قيد التنفيذ' }}>قيد التنفيذ</option>
+                            <option value="مكتملة" {{ 'selected' if task.status == 'مكتملة' }}>مكتملة</option>
+                        </select>
+                    </form>
+                    
+                    {% if user.role == 'مدير' %}
+                    <div class="task-actions">
+                        <a href="{{ url_for('delete_task', task_id=task.id) }}" class="action-btn delete" onclick="return confirmDelete('هل أنت متأكد من حذف هذه المهمة؟');">
+                            <i class="fas fa-trash"></i> حذف
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-tasks" style="font-size: 60px; color: var(--border); margin-bottom: 20px;"></i>
+                <h3>لا يوجد مهام</h3>
+                <p>أضف مهمة جديدة للبدء</p>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+    
+    <!-- Add Task Modal -->
+    <div id="addTaskModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+        <div class="form-card" style="max-width: 600px; width: 100%; margin: 20px auto; box-sizing: border-box;">
+            <h3><i class="fas fa-plus-circle"></i> إضافة مهمة جديدة</h3>
+            <form method="POST" action="{{ url_for('add_task') }}">
+                <div class="form-group">
+                    <label><i class="fas fa-heading"></i> عنوان المهمة</label>
+                    <input type="text" name="title" required placeholder="أدخل عنوان المهمة">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-align-right"></i> الوصف</label>
+                    <textarea name="description" rows="3" placeholder="أدخل وصف المهمة"></textarea>
+                </div>
+                {% if user.role == 'مدير' %}
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> الموظف المسؤول</label>
+                    <select name="assigned_to" required>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}">{{ emp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar"></i> تاريخ الاستحقاق</label>
+                        <input type="date" name="due_date">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-clock"></i> وقت الاستحقاق</label>
+                        <input type="time" name="due_time">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-flag"></i> الأولوية</label>
+                    <select name="priority">
+                        <option value="عادية">عادية</option>
+                        <option value="متوسطة">متوسطة</option>
+                        <option value="عالية">عالية</option>
+                    </select>
+                </div>
+                <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> إضافة المهمة
+                    </button>
+                    <button type="button" onclick="document.getElementById('addTaskModal').style.display='none'" class="btn btn-danger">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

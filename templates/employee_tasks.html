@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مهام {{ employee.name }} - إدارة المهام</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { position: relative; }
+        .network-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none; }
+        .network-bg canvas { width: 100%; height: 100%; opacity: 0.08; }
+        .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+        .sidebar { width: 280px; background: var(--card-bg); padding: 25px 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="network-bg">
+        <canvas id="networkCanvas"></canvas>
+    </div>
+    
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="شعار الشركة" class="logo-image" style="max-width: 120px; display: none;" id="companyLogo">
+                <div class="logo-icon" id="defaultIcon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <h2>إدارة المهام</h2>
+            </div>
+            
+            <div class="user-info" style="flex-direction: column; text-align: center; padding: 20px;">
+                <div class="user-avatar" style="width: 70px; height: 70px; font-size: 28px; margin-bottom: 10px;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="name" style="font-size: 16px; font-weight: 600;">{{ user.name }}</div>
+                <div class="role" style="color: var(--primary); font-size: 13px; margin-top: 5px;">{{ user.role }}</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="/dashboard"><i class="fas fa-home"></i> لوحة التحكم</a></li>
+                <li><a href="/employees" class="active"><i class="fas fa-users"></i> الموظفين</a></li>
+                <li><a href="/tasks"><i class="fas fa-tasks"></i> المهام</a></li>
+                <li><a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+            </ul>
+        </aside>
+        
+        <main class="main-content">
+            <div class="header">
+                <div>
+                    <h1><i class="fas fa-user" style="color: var(--primary); margin-left: 10px;"></i> مهام: <span>{{ employee.name }}</span></h1>
+                    <p style="color: var(--text-secondary); margin-top: 5px;">{{ employee.role }}</p>
+                </div>
+                <a href="/employees" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> العودة للموظفين
+                </a>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Tasks Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon blue"><i class="fas fa-list-alt"></i></div>
+                    <div class="value">{{ tasks|length }}</div>
+                    <div class="label">إجمالي المهام</div>
+                </div>
+                
+                {% set pending = tasks|selectattr('status', 'equalto', 'معلقة')|list|length %}
+                {% set in_progress = tasks|selectattr('status', 'equalto', 'قيد التنفيذ')|list|length %}
+                {% set completed = tasks|selectattr('status', 'equalto', 'مكتملة')|list|length %}
+                
+                <div class="stat-card">
+                    <div class="icon orange"><i class="fas fa-clock"></i></div>
+                    <div class="value">{{ pending }}</div>
+                    <div class="label">معلقة</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="icon purple"><i class="fas fa-spinner"></i></div>
+                    <div class="value">{{ in_progress }}</div>
+                    <div class="label">قيد التنفيذ</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="icon green"><i class="fas fa-check-circle"></i></div>
+                    <div class="value">{{ completed }}</div>
+                    <div class="label">مكتملة</div>
+                </div>
+            </div>
+            
+            <!-- Tasks List -->
+            <div class="table-card">
+                <h3><i class="fas fa-tasks"></i> قائمة المهام</h3>
+                
+                {% if tasks %}
+                    <div class="tasks-grid">
+                        {% for task in tasks %}
+                            <div class="task-card">
+                                <div class="task-header">
+                                    <h3 class="task-title">{{ task.title }}</h3>
+                                    <span class="priority-badge {{ 'high' if task.priority == 'عالية' else 'medium' if task.priority == 'متوسطة' else 'normal' }}">
+                                        {{ task.priority }}
+                                    </span>
+                                </div>
+                                
+                                <p class="task-description">{{ task.description if task.description else 'لا يوجد وصف' }}</p>
+                                
+                                <div class="task-info">
+                                    {% if task.due_date %}
+                                    <span><i class="fas fa-calendar"></i> {{ task.due_date }}</span>
+                                    {% endif %}
+                                    {% if task.due_time %}
+                                    <span><i class="fas fa-clock"></i> {{ task.due_time }}</span>
+                                    {% endif %}
+                                    {% if task.created_by_name %}
+                                    <span><i class="fas fa-user"></i> أنشأها: {{ task.created_by_name }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div style="margin-top: 15px;">
+                                    <span class="status-badge status-{{ 'pending' if task.status == 'معلقة' else 'progress' if task.status == 'قيد التنفيذ' else 'completed' }}">
+                                        {{ task.status }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-tasks" style="font-size: 50px; color: var(--text-secondary); margin-bottom: 20px;"></i>
+                        <h3>لا توجد مهام لهذا الموظف</h3>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - إدارة المهام</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { position: relative; }
+        .network-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none; }
+        .network-bg canvas { width: 100%; height: 100%; opacity: 0.08; }
+        .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+        .sidebar { width: 280px; background: var(--card-bg); padding: 25px 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="network-bg">
+        <canvas id="networkCanvas"></canvas>
+    </div>
+    
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="شعار الشركة" class="logo-image" style="max-width: 120px; display: none;" id="companyLogo">
+                <div class="logo-icon" id="defaultIcon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <h2>إدارة المهام</h2>
+            </div>
+            
+            <div class="user-info" style="flex-direction: column; text-align: center; padding: 20px;">
+                <div class="user-avatar" style="width: 70px; height: 70px; font-size: 28px; margin-bottom: 10px;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="name" style="font-size: 16px; font-weight: 600;">{{ user.name }}</div>
+                <div class="role" style="color: var(--primary); font-size: 13px; margin-top: 5px;">{{ user.role }}</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-home"></i> لوحة التحكم</a></li>
+                {% if user.role == 'مدير' %}
+                <li><a href="{{ url_for('employees') }}"><i class="fas fa-users"></i> الموظفين</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('tasks') }}"><i class="fas fa-tasks"></i> المهام</a></li>
+                <li><a href="{{ url_for('logout') }}" class="logout"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+            </ul>
+        </aside>
+        
+        <main class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-wave-square" style="color: var(--primary); margin-left: 10px;"></i> مرحباً، <span>{{ user.name }}</span></h1>
+                <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <a href="{{ url_for('tasks') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> إضافة مهمة جديدة
+                </a>
+                {% if user.role == 'مدير' %}
+                <a href="{{ url_for('employees') }}" class="btn btn-success">
+                    <i class="fas fa-user-plus"></i> إضافة موظف
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon blue"><i class="fas fa-list-alt"></i></div>
+                    <div class="value">{{ stats.total_tasks }}</div>
+                    <div class="label">إجمالي المهام</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="icon orange"><i class="fas fa-clock"></i></div>
+                    <div class="value">{{ stats.pending_tasks }}</div>
+                    <div class="label">مهام معلقة</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="icon purple"><i class="fas fa-spinner"></i></div>
+                    <div class="value">{{ stats.in_progress_tasks }}</div>
+                    <div class="label">قيد التنفيذ</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="icon green"><i class="fas fa-check-circle"></i></div>
+                    <div class="value">{{ stats.completed_tasks }}</div>
+                    <div class="label">مكتملة</div>
+                </div>
+                
+                {% if user.role == 'مدير' %}
+                <div class="stat-card">
+                    <div class="icon blue"><i class="fas fa-users"></i></div>
+                    <div class="value">{{ stats.total_employees }}</div>
+                    <div class="label">الموظفين</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Alerts -->
+            {% if alerts.expiring or alerts.overdue %}
+            <div class="alerts-section">
+                <h3 class="section-title"><i class="fas fa-bell"></i> التنبيهات</h3>
+                
+                {% for task in alerts.overdue %}
+                <div class="alert-card danger">
+                    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div>
+                        <h4>مهمة متأخرة: {{ task.title }}</h4>
+                        <p><i class="fas fa-user"></i> {{ task.assigned_to_name }} | <i class="fas fa-calendar"></i> الموعد كان: {{ task.due_date }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% for task in alerts.expiring %}
+                <div class="alert-card warning">
+                    <div class="alert-icon"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <h4>مهمة تنتهي قريباً: {{ task.title }}</h4>
+                        <p><i class="fas fa-user"></i> {{ task.assigned_to_name }} | <i class="fas fa-calendar"></i> الموعد: {{ task.due_date }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </main>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
