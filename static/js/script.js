@@ -73,18 +73,21 @@ if (canvas) {
             }
         }
         
-        particles.forEach(p => {
-            p.update();
-            p.draw();
+        // Update and draw particles
+        particles.forEach(particle => {
+            particle.update();
+            particle.draw();
         });
         
         requestAnimationFrame(animate);
     }
     
+    // Initialize
     resizeCanvas();
     initParticles();
     animate();
     
+    // Handle resize
     window.addEventListener('resize', () => {
         resizeCanvas();
         initParticles();
@@ -95,6 +98,12 @@ if (canvas) {
 function toggleTheme() {
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    // Update icon
+    const icon = document.querySelector('.theme-toggle i');
+    if (icon) {
+        icon.classList.toggle('fa-moon');
+        icon.classList.toggle('fa-sun');
+    }
 }
 
 // Initialize theme on load

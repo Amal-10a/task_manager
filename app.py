@@ -68,9 +68,37 @@ def get_user_by_id(user_id):
 
 def get_all_employees():
     conn = get_db_connection()
-    employees = conn.execute('SELECT * FROM users WHERE role = ?', ('موظف',)).fetchall()
+    employees = conn.execute('''
+        SELECT u.*, 
+               (SELECT COUNT(*) FROM tasks WHERE assigned_to = u.id) as task_count
+        FROM users u 
+        WHERE role = ?
+    ''', ('موظف',)).fetchall()
     conn.close()
     return employees
+
+def get_all_supervisors():
+    conn = get_db_connection()
+    supervisors = conn.execute('''
+        SELECT u.*, 
+               (SELECT COUNT(*) FROM tasks WHERE assigned_to = u.id) as task_count
+        FROM users u 
+        WHERE role = ?
+    ''', ('مشرف',)).fetchall()
+    conn.close()
+    return supervisors
+
+def get_all_users():
+    """Get all users (employees and supervisors)"""
+    conn = get_db_connection()
+    users = conn.execute('''
+        SELECT u.*, 
+               (SELECT COUNT(*) FROM tasks WHERE assigned_to = u.id) as task_count
+        FROM users u 
+        WHERE role IN (?, ?)
+    ''', ('موظف', 'مشرف')).fetchall()
+    conn.close()
+    return users
 
 def get_tasks_for_user(user_id, role):
     conn = get_db_connection()
@@ -239,9 +267,11 @@ def dashboard():
     stats = {}
     if session['role'] == 'مدير':
         stats['total_employees'] = conn.execute('SELECT COUNT(*) FROM users WHERE role = ?', ('موظف',)).fetchone()[0]
+        stats['total_supervisors'] = conn.execute('SELECT COUNT(*) FROM users WHERE role = ?', ('مشرف',)).fetchone()[0]
         stats['total_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks').fetchone()[0]
     else:
         stats['total_employees'] = 0
+        stats['total_supervisors'] = 0
         stats['total_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE assigned_to = ?', 
                                            (session['user_id'],)).fetchone()[0]
     stats['pending_tasks'] = conn.execute('SELECT COUNT(*) FROM tasks WHERE status = ?', ('معلقة',)).fetchone()[0]
@@ -256,22 +286,27 @@ def employees():
         flash('غير مصرح لك بهذه الصفحة', 'error')
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
+        user_type = request.form.get('user_type', 'موظف')
         username = request.form['username']
         password = request.form['password']
         name = request.form['name']
         try:
             conn = get_db_connection()
             conn.execute('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)',
-                        (username, password, 'موظف', name))
+                        (username, password, user_type, name))
             conn.commit()
             conn.close()
-            flash('تم إضافة الموظف بنجاح', 'success')
+            role_name = 'المشرف' if user_type == 'مشرف' else 'الموظف'
+            flash(f'تم إضافة {role_name} بنجاح', 'success')
         except sqlite3.IntegrityError:
             flash('اسم المستخدم موجود بالفعل', 'error')
         return redirect(url_for('employees'))
     user = get_user_by_id(session['user_id'])
     employees_list = get_all_employees()
-    return render_template('employees.html', employees=employees_list, user=user)
+    supervisors_list = get_all_supervisors()
+    return render_template('employees.html', employees=employees_list, supervisors=supervisors_list, user=user)
+
+
 
 @app.route('/delete_employee/<int:employee_id>')
 def delete_employee(employee_id):
@@ -279,11 +314,16 @@ def delete_employee(employee_id):
         flash('غير مصرح لك بهذه الصفحة', 'error')
         return redirect(url_for('dashboard'))
     conn = get_db_connection()
+    # Get user role before deletion
+    user = conn.execute('SELECT role FROM users WHERE id = ?', (employee_id,)).fetchone()
     conn.execute('DELETE FROM tasks WHERE assigned_to = ?', (employee_id,))
     conn.execute('DELETE FROM users WHERE id = ?', (employee_id,))
     conn.commit()
     conn.close()
-    flash('تم حذف الموظف ومهامه', 'success')
+    if user and user['role'] == 'مشرف':
+        flash('تم حذف المشرف ومهامه', 'success')
+    else:
+        flash('تم حذف الموظف ومهامه', 'success')
     return redirect(url_for('employees'))
 
 @app.route('/employee/<int:employee_id>/tasks')
@@ -331,7 +371,7 @@ def add_task():
 def tasks():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    employees = get_all_employees()
+    employees = get_all_users()
     user = get_user_by_id(session['user_id'])
     tasks_list = get_tasks_for_user(session['user_id'], session['role'])
     return render_template('tasks.html', tasks=tasks_list, employees=employees, user=user)

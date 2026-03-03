@@ -144,9 +144,9 @@
                 {% if user.role == 'مدير' %}
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> الموظف المسؤول</label>
-                    <select name="assigned_to" required>
+                    <select name="assigned_to" required title="اختر الموظف أو المشرف">
                         {% for emp in employees %}
-                        <option value="{{ emp.id }}">{{ emp.name }}</option>
+                        <option value="{{ emp.id }}">{{ emp.name }} ({{ 'مشرف' if emp.role == 'مشرف' else 'موظف' }})</option>
                         {% endfor %}
                     </select>
                 </div>

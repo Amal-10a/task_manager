@@ -63,7 +63,7 @@
                 </a>
                 {% if user.role == 'مدير' %}
                 <a href="{{ url_for('employees') }}" class="btn btn-success">
-                    <i class="fas fa-user-plus"></i> إضافة موظف
+                    <i class="fas fa-user-plus"></i> إضافة مستخدم
                 </a>
                 {% endif %}
             </div>
@@ -99,6 +99,11 @@
                     <div class="icon blue"><i class="fas fa-users"></i></div>
                     <div class="value">{{ stats.total_employees }}</div>
                     <div class="label">الموظفين</div>
+                </a>
+                <a href="{{ url_for('employees') }}" class="stat-card">
+                    <div class="icon purple"><i class="fas fa-user-shield"></i></div>
+                    <div class="value">{{ stats.total_supervisors }}</div>
+                    <div class="label">المشرفين</div>
                 </a>
                 {% endif %}
             </div>
