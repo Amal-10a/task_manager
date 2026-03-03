@@ -20,6 +20,11 @@
         <canvas id="networkCanvas"></canvas>
     </div>
     
+    <!-- Theme Toggle - Fixed at top left -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
+        <i class="fas fa-moon"></i>
+    </button>
+    
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">
@@ -50,16 +55,13 @@
         <main class="main-content">
             <div class="header">
                 <h1><i class="fas fa-users" style="color: var(--primary); margin-left: 10px;"></i> الموظفين</h1>
-                <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
-                    <i class="fas fa-moon"></i>
-                </button>
             </div>
             
             <!-- Quick Actions -->
             <div class="quick-actions">
-                <a href="#" onclick="document.getElementById('addEmployeeModal').style.display='flex'" class="btn btn-primary">
+                <button type="button" onclick="openModal('addEmployeeModal')" class="btn btn-primary">
                     <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
-                </a>
+                </button>
             </div>
             
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -169,8 +171,8 @@
     </div>
     
     <!-- Add Employee Modal -->
-    <div id="addEmployeeModal" class="modal-overlay">
-        <div class="modal-content">
+    <div id="addEmployeeModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addEmployeeModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <h3><i class="fas fa-user-plus"></i> إضافة مستخدم جديد</h3>
             <form method="POST" action="{{ url_for('employees') }}">
                 <div class="form-group">
@@ -187,7 +189,7 @@
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-user-tag"></i> نوع المستخدم</label>
-                    <select name="user_type" required>
+                    <select name="user_type" required title="اختر نوع المستخدم">
                         <option value="موظف">موظف</option>
                         <option value="مشرف">مشرف</option>
                     </select>
@@ -196,7 +198,7 @@
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-check"></i> إضافة
                     </button>
-                    <button type="button" onclick="document.getElementById('addEmployeeModal').style.display='none'" class="btn btn-danger">
+                    <button type="button" onclick="closeModal('addEmployeeModal')" class="btn btn-danger">
                         <i class="fas fa-times"></i> إلغاء
                     </button>
                 </div>

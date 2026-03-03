@@ -20,11 +20,15 @@
         <canvas id="networkCanvas"></canvas>
     </div>
     
+    <!-- Theme Toggle - Fixed at top left -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
+        <i class="fas fa-moon"></i>
+    </button>
+    
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="شعار الشركة" class="logo-image" style="max-width: 120px; display: none;" id="companyLogo">
-                <div class="logo-icon" id="defaultIcon">
+                <div class="logo-icon">
                     <i class="fas fa-tasks"></i>
                 </div>
                 <h2>إدارة المهام</h2>
@@ -51,9 +55,6 @@
         <main class="main-content">
             <div class="header">
                 <h1><i class="fas fa-tasks" style="color: var(--primary); margin-left: 10px;"></i> المهام</h1>
-                <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
-                    <i class="fas fa-moon"></i>
-                </button>
             </div>
             
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -69,9 +70,9 @@
             
             <!-- Add Task Button -->
             <div class="quick-actions">
-                <a href="#" onclick="document.getElementById('addTaskModal').style.display='flex'" class="btn btn-primary">
+                <button type="button" onclick="openModal('addTaskModal')" class="btn btn-primary">
                     <i class="fas fa-plus"></i> إضافة مهمة جديدة
-                </a>
+                </button>
             </div>
             
             <!-- Tasks Grid -->
@@ -129,8 +130,8 @@
     </div>
     
     <!-- Add Task Modal -->
-    <div id="addTaskModal" class="modal-overlay">
-        <div class="modal-content">
+    <div id="addTaskModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addTaskModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <h3><i class="fas fa-plus-circle"></i> إضافة مهمة جديدة</h3>
             <form method="POST" action="{{ url_for('add_task') }}">
                 <div class="form-group">
@@ -173,7 +174,7 @@
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-check"></i> إضافة
                     </button>
-                    <button type="button" onclick="document.getElementById('addTaskModal').style.display='none'" class="btn btn-danger">
+                    <button type="button" onclick="closeModal('addTaskModal')" class="btn btn-danger">
                         <i class="fas fa-times"></i> إلغاء
                     </button>
                 </div>

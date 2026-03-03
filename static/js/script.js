@@ -1,5 +1,5 @@
 // Network Animation
- const canvas = document.getElementById('networkCanvas');
+const canvas = document.getElementById('networkCanvas');
 if (canvas) {
     const ctx = canvas.getContext('2d');
     let particles = [];
@@ -143,16 +143,11 @@ function closeModal(modalId) {
 }
 
 // Close modal when clicking outside
-document.addEventListener('click', function(event) {
-    if (event.target.classList.contains('modal-overlay') || event.target.closest('.modal-overlay')) {
-        const modals = document.querySelectorAll('[id$="Modal"]');
-        modals.forEach(modal => {
-            if (modal.style.display === 'flex') {
-                modal.style.display = 'none';
-            }
-        });
+function closeModalOnOverlay(event, modalId) {
+    if (event.target.classList.contains('modal-overlay')) {
+        closeModal(modalId);
     }
-});
+}
 
 // Task status color coding
 document.addEventListener('DOMContentLoaded', function() {

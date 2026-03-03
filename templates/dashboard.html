@@ -20,6 +20,11 @@
         <canvas id="networkCanvas"></canvas>
     </div>
     
+    <!-- Theme Toggle - Fixed at top left -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
+        <i class="fas fa-moon"></i>
+    </button>
+    
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="logo">
@@ -51,9 +56,6 @@
         <main class="main-content">
             <div class="header">
                 <h1><i class="fas fa-wave-square" style="color: var(--primary); margin-left: 10px;"></i> مرحباً، <span>{{ user.name }}</span></h1>
-                <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
-                    <i class="fas fa-moon"></i>
-                </button>
             </div>
             
             <!-- Quick Actions -->

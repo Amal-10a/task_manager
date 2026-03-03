@@ -65,6 +65,31 @@ body {
     opacity: 0.15;
 }
 
+/* Theme Toggle - Fixed at top of page */
+.theme-toggle {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--primary);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    width: 42px;
+    height: 42px;
+    box-sizing: border-box;
+}
+
+.theme-toggle:hover {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
 /* Login Container */
 .login-container {
     background: var(--card-bg);
@@ -266,35 +291,6 @@ body {
 .dark .alert-success {
     background: #1A2E1A;
     border-color: #2E3D2E;
-}
-
-/* Theme Toggle */
-.theme-toggle {
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    background: var(--card-bg);
-    border: 2px solid var(--border);
-    padding: 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    color: var(--primary);
-    font-size: 16px;
-    z-index: 100;
-    transition: all 0.3s ease;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.theme-toggle:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-    transform: rotate(360deg);
 }
 
 /* Demo Info */
@@ -1174,16 +1170,6 @@ tr:hover {
     .header h1 {
         font-size: 14px;
         flex: 1;
-    }
-    
-    .theme-toggle {
-        position: relative;
-        top: auto;
-        left: auto;
-        width: 36px;
-        height: 36px;
-        padding: 8px;
-        font-size: 14px;
     }
     
     .stats-grid {

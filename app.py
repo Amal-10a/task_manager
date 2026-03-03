@@ -13,11 +13,6 @@ app.secret_key = 'task_manager_secret_key_2024'
 # Database setup
 DB_NAME = "task_manager.db"
 
-# GitHub OAuth configuration
-GITHUB_CLIENT_ID = os.environ.get('GITHUB_OAUTH_CLIENT_ID', '')
-GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_OAUTH_CLIENT_SECRET', '')
-GITHUB_REDIRECT_URI = os.environ.get('GITHUB_REDIRECT_URI', '')
-
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -174,88 +169,6 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-@app.route('/github/login')
-def github_login():
-    if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
-        flash('GitHub OAuth غير مكون - يرجى إضافة المتغيرات البيئية', 'error')
-        return redirect(url_for('login'))
-    
-    import secrets
-    session['github_state'] = secrets.token_hex(16)
-    
-    redirect_uri = GITHUB_REDIRECT_URI
-    if not redirect_uri:
-        flash('يرجى تكوين GITHUB_REDIRECT_URI', 'error')
-        return redirect(url_for('login'))
-    
-    github_auth_url = f"https://github.com/login/oauth/authorize?client_id={GITHUB_CLIENT_ID}&redirect_uri={redirect_uri}&scope=read:user&state={session['github_state']}"
-    return redirect(github_auth_url)
-
-@app.route('/github/callback')
-def github_callback():
-    error = request.args.get('error')
-    if error:
-        flash(f'خطأ من GitHub: {error}', 'error')
-        return redirect(url_for('login'))
-    
-    code = request.args.get('code')
-    state = request.args.get('state')
-    
-    if state != session.get('github_state'):
-        flash('خطأ في الأمان', 'error')
-        return redirect(url_for('login'))
-    
-    token_url = "https://github.com/login/oauth/access_token"
-    token_data = {
-        'client_id': GITHUB_CLIENT_ID,
-        'client_secret': GITHUB_CLIENT_SECRET,
-        'code': code,
-        'redirect_uri': GITHUB_REDIRECT_URI
-    }
-    token_headers = {'Accept': 'application/json'}
-    
-    try:
-        token_response = requests.post(token_url, data=token_data, headers=token_headers)
-        token_result = token_response.json()
-        
-        if 'access_token' not in token_result:
-            flash('فشل في الحصول على التوكن', 'error')
-            return redirect(url_for('login'))
-        
-        access_token = token_result['access_token']
-        
-        user_url = "https://api.github.com/user"
-        user_headers = {'Authorization': f'token {access_token}'}
-        user_response = requests.get(user_url, headers=user_headers)
-        user_data = user_response.json()
-        
-        github_username = user_data.get('login')
-        github_name = user_data.get('name') or github_username
-        
-        conn = get_db_connection()
-        user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
-        
-        if not user:
-            conn.execute('INSERT INTO users (username, password, role, name) VALUES (?, ?, ?, ?)',
-                        (github_username, 'github_oauth', 'موظف', github_name))
-            conn.commit()
-            user = conn.execute('SELECT * FROM users WHERE username = ?', (github_username,)).fetchone()
-        
-        conn.close()
-        
-        session['user_id'] = user['id']
-        session['username'] = user['username']
-        session['role'] = user['role']
-        session['name'] = user['name']
-        session['github_token'] = access_token
-        
-        flash('تم تسجيل الدخول بنجاح عبر GitHub', 'success')
-        return redirect(url_for('dashboard'))
-        
-    except Exception as e:
-        flash(f'خطأ: {str(e)}', 'error')
-        return redirect(url_for('login'))
-
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -297,7 +210,7 @@ def employees():
             conn.commit()
             conn.close()
             role_name = 'المشرف' if user_type == 'مشرف' else 'الموظف'
-            flash(f'تم إضافة {role_name} بنجاح', 'success')
+            flash(f'تم اضافة {role_name} بنجاح', 'success')
         except sqlite3.IntegrityError:
             flash('اسم المستخدم موجود بالفعل', 'error')
         return redirect(url_for('employees'))
@@ -306,15 +219,12 @@ def employees():
     supervisors_list = get_all_supervisors()
     return render_template('employees.html', employees=employees_list, supervisors=supervisors_list, user=user)
 
-
-
 @app.route('/delete_employee/<int:employee_id>')
 def delete_employee(employee_id):
     if 'user_id' not in session or session['role'] != 'مدير':
         flash('غير مصرح لك بهذه الصفحة', 'error')
         return redirect(url_for('dashboard'))
     conn = get_db_connection()
-    # Get user role before deletion
     user = conn.execute('SELECT role FROM users WHERE id = ?', (employee_id,)).fetchone()
     conn.execute('DELETE FROM tasks WHERE assigned_to = ?', (employee_id,))
     conn.execute('DELETE FROM users WHERE id = ?', (employee_id,))
@@ -364,7 +274,7 @@ def add_task():
     ''', (title, description, assigned_to, due_date, due_time, priority, session['user_id']))
     conn.commit()
     conn.close()
-    flash('تم إضافة المهمة بنجاح', 'success')
+    flash('تم اضافة المهمة بنجاح', 'success')
     return redirect(url_for('tasks'))
 
 @app.route('/tasks', methods=['GET', 'POST'])
