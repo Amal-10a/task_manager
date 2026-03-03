@@ -695,6 +695,25 @@ tr:hover {
     flex-wrap: wrap;
 }
 
+/* Clickable Stat Cards */
+.stat-card {
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(139, 69, 19, 0.15);
+}
+
+/* Better icons in dark mode */
+.dark .stat-card .icon i,
+.dark .alert-card i,
+.dark .task-info i {
+    color: var(--primary) !important;
+}
+
 /* Stat Cards Icons */
 .stat-card .icon {
     width: 48px;

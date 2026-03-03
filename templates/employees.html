@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -13,6 +14,10 @@
         .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
         .sidebar { width: 280px; background: var(--card-bg); padding: 25px 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        /* Better icons in dark mode */
+        .dark .stat-card .icon i,
+        .dark .alert-card i { color: var(--primary); }
     </style>
 </head>
 <body>
@@ -109,7 +114,10 @@
                                 <td>
                                     <div class="actions">
                                         <a href="{{ url_for('employee_tasks', employee_id=emp.id) }}" class="btn btn-small" style="background: #E3F2FD; color: #1976D2;">
-                                            <i class="fas fa-eye"></i> عرض المهام
+                                            <i class="fas fa-eye"></i> عرض
+                                        </a>
+                                        <a href="{{ url_for('delete_employee', employee_id=emp.id) }}" class="btn btn-small" style="background: #FFEBEE; color: #C62828;" onclick="return confirm('هل أنت متأكد من حذف هذا الموظف؟');">
+                                            <i class="fas fa-trash"></i> حذف
                                         </a>
                                     </div>
                                 </td>
@@ -133,7 +141,7 @@
     <div id="addEmployeeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div class="form-card" style="max-width: 500px; width: 90%;">
             <h3><i class="fas fa-user-plus"></i> إضافة موظف جديد</h3>
-<form method="POST" action="{{ url_for('employees') }}">
+            <form method="POST" action="{{ url_for('employees') }}">
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> الاسم الكامل</label>
                     <input type="text" name="name" required placeholder="أدخل الاسم الكامل">

@@ -13,6 +13,14 @@
         .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
         .sidebar { width: 280px; background: var(--card-bg); padding: 25px 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        /* Clickable stat cards */
+        .stat-card { cursor: pointer; text-decoration: none; display: block; }
+        .stat-card:hover { transform: translateY(-5px); }
+        
+        /* Better icons in dark mode */
+        .dark .stat-card .icon i { color: inherit; }
+        .dark .alert-card i { color: var(--primary); }
     </style>
 </head>
 <body>
@@ -68,38 +76,38 @@
                 {% endif %}
             </div>
             
-            <!-- Stats -->
+            <!-- Stats - Clickable Cards -->
             <div class="stats-grid">
-                <div class="stat-card">
+                <a href="{{ url_for('tasks') }}" class="stat-card">
                     <div class="icon blue"><i class="fas fa-list-alt"></i></div>
                     <div class="value">{{ stats.total_tasks }}</div>
                     <div class="label">إجمالي المهام</div>
-                </div>
+                </a>
                 
-                <div class="stat-card">
+                <a href="{{ url_for('tasks') }}?status=معلقة" class="stat-card">
                     <div class="icon orange"><i class="fas fa-clock"></i></div>
                     <div class="value">{{ stats.pending_tasks }}</div>
                     <div class="label">مهام معلقة</div>
-                </div>
+                </a>
                 
-                <div class="stat-card">
+                <a href="{{ url_for('tasks') }}?status=قيد التنفيذ" class="stat-card">
                     <div class="icon purple"><i class="fas fa-spinner"></i></div>
                     <div class="value">{{ stats.in_progress_tasks }}</div>
                     <div class="label">قيد التنفيذ</div>
-                </div>
+                </a>
                 
-                <div class="stat-card">
+                <a href="{{ url_for('tasks') }}?status=مكتملة" class="stat-card">
                     <div class="icon green"><i class="fas fa-check-circle"></i></div>
                     <div class="value">{{ stats.completed_tasks }}</div>
                     <div class="label">مكتملة</div>
-                </div>
+                </a>
                 
                 {% if user.role == 'مدير' %}
-                <div class="stat-card">
+                <a href="{{ url_for('employees') }}" class="stat-card">
                     <div class="icon blue"><i class="fas fa-users"></i></div>
                     <div class="value">{{ stats.total_employees }}</div>
                     <div class="label">الموظفين</div>
-                </div>
+                </a>
                 {% endif %}
             </div>
             
@@ -113,7 +121,7 @@
                     <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
                     <div>
                         <h4>مهمة متأخرة: {{ task.title }}</h4>
-                        <p><i class="fas fa-user"></i> {{ task.assigned_to_name }} | <i class="fas fa-calendar"></i> الموعد كان: {{ task.due_date }}</p>
+                        <p><i class="fas fa-user"></i> {{ task.assigned_to_name }} | <i class="fas fa-calendar-alt"></i> الموعد كان: {{ task.due_date }}</p>
                     </div>
                 </div>
                 {% endfor %}
@@ -123,7 +131,7 @@
                     <div class="alert-icon"><i class="fas fa-clock"></i></div>
                     <div>
                         <h4>مهمة تنتهي قريباً: {{ task.title }}</h4>
-                        <p><i class="fas fa-user"></i> {{ task.assigned_to_name }} | <i class="fas fa-calendar"></i> الموعد: {{ task.due_date }}</p>
+                        <p><i class="fas fa-user"></i> {{ task.assigned_to_name }} | <i class="fas fa-calendar-alt"></i> الموعد: {{ task.due_date }}</p>
                     </div>
                 </div>
                 {% endfor %}
