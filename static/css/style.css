@@ -290,6 +290,28 @@ body {
     padding: 20px;
     overflow-y: auto;
     padding-bottom: 80px;
+    min-height: 100vh;
+}
+
+/* Dark Mode Improvements */
+.dark {
+    background: var(--bg);
+}
+
+.dark .header {
+    border-bottom-color: var(--border);
+}
+
+.dark .header h1 {
+    color: var(--text);
+}
+
+.dark .quick-actions .btn {
+    border: 2px solid var(--border);
+}
+
+.dark .logo-icon {
+    box-shadow: 0 8px 24px rgba(210, 105, 30, 0.3);
 }
 
 /* Header */
