@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -12,12 +11,8 @@
         .network-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none; }
         .network-bg canvas { width: 100%; height: 100%; opacity: 0.08; }
         .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
-        .sidebar { width: 280px; background: var(--card-bg); padding: 25px 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
-        
-        /* Better icons in dark mode */
-        .dark .stat-card .icon i,
-        .dark .alert-card i { color: var(--primary); }
+        .sidebar { width: 260px; background: var(--card-bg); padding: 20px 16px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
     </style>
 </head>
 <body>
@@ -138,8 +133,8 @@
     </div>
     
     <!-- Add Employee Modal -->
-    <div id="addEmployeeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="form-card" style="max-width: 500px; width: 90%;">
+    <div id="addEmployeeModal" class="modal-overlay">
+        <div class="modal-content">
             <h3><i class="fas fa-user-plus"></i> إضافة موظف جديد</h3>
             <form method="POST" action="{{ url_for('employees') }}">
                 <div class="form-group">
@@ -154,7 +149,7 @@
                     <label><i class="fas fa-lock"></i> كلمة المرور</label>
                     <input type="password" name="password" required placeholder="أدخل كلمة المرور">
                 </div>
-                <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+                <div class="modal-actions">
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-check"></i> إضافة
                     </button>
