@@ -678,39 +678,56 @@ tr:hover { background: var(--bg); }
     .sidebar {
         width: 100%;
         height: auto;
-        max-height: 60px;
+        min-height: 50px;
+        max-height: none;
         border: none;
         border-top: 1px solid var(--border);
-        padding: 8px 5px;
+        padding: 6px 10px;
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
         z-index: 100;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-        display: flex;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+        display: flex !important;
         flex-direction: row;
         align-items: center;
         justify-content: center;
+        background: var(--card-bg) !important;
     }
     
     .sidebar .logo, .sidebar .user-info { display: none !important; }
     
     .nav-menu {
-        display: flex;
+        display: flex !important;
         flex-wrap: nowrap;
         justify-content: space-around;
         gap: 0;
         width: 100%;
-        max-width: 600px;
+        max-width: 500px;
         margin: 0;
         padding: 0;
+        list-style: none;
     }
     
     .nav-menu li { margin-bottom: 0; flex: 1; text-align: center; }
     
-    .nav-menu a { padding: 6px 2px; font-size: 8px; flex-direction: column; gap: 1px; border-radius: 6px; }
-    .nav-menu a i { width: auto; font-size: 16px; margin-bottom: 2px; }
+    .nav-menu a { 
+        padding: 8px 4px; 
+        font-size: 10px; 
+        flex-direction: column; 
+        gap: 2px; 
+        border-radius: 8px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    .nav-menu a i { 
+        width: auto; 
+        font-size: 18px; 
+        margin-bottom: 2px;
+        display: block;
+    }
     
     .main-content { padding: 10px; padding-bottom: 80px; }
     .header { flex-direction: row; gap: 8px; align-items: center; }
