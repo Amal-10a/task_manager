@@ -83,11 +83,22 @@ body {
     width: 42px;
     height: 42px;
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .theme-toggle:hover {
     background: var(--primary) !important;
     color: white !important;
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 4px 15px rgba(139, 69, 19, 0.3);
+}
+
+.theme-toggle i {
+    transition: transform 0.4s ease;
+}
+
+.theme-toggle:active i {
+    transform: rotate(180deg);
 }
 
 /* Login Container */
