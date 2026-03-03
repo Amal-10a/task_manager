@@ -3,6 +3,9 @@ from datetime import datetime, timedelta
 import sqlite3
 import os
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'task_manager_secret_key_2024'
