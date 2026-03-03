@@ -4,28 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المهام - إدارة المهام</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        body { position: relative; }
-        .network-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none; }
-        .network-bg canvas { width: 100%; height: 100%; opacity: 0.08; }
-        .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
-        .sidebar { width: 260px; background: var(--card-bg); padding: 20px 16px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
-    </style>
 </head>
 <body>
+    <!-- خلفية الشبكة -->
     <div class="network-bg">
         <canvas id="networkCanvas"></canvas>
     </div>
     
-    <!-- Theme Toggle - Fixed at top left -->
+    <!-- زر تبديل الموضوع -->
     <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
         <i class="fas fa-moon"></i>
     </button>
     
     <div class="dashboard-container">
+        <!-- القائمة الجانبية -->
         <aside class="sidebar">
             <div class="logo">
                 <div class="logo-icon">
@@ -34,12 +27,12 @@
                 <h2>إدارة المهام</h2>
             </div>
             
-            <div class="user-info" style="flex-direction: column; text-align: center; padding: 20px;">
-                <div class="user-avatar" style="width: 70px; height: 70px; font-size: 28px; margin-bottom: 10px;">
+            <div class="user-info">
+                <div class="user-avatar">
                     <i class="fas fa-user"></i>
                 </div>
-                <div class="name" style="font-size: 16px; font-weight: 600;">{{ user.name }}</div>
-                <div class="role" style="color: var(--primary); font-size: 13px; margin-top: 5px;">{{ user.role }}</div>
+                <div class="name">{{ user.name }}</div>
+                <div class="role">{{ user.role }}</div>
             </div>
             
             <ul class="nav-menu">
@@ -52,6 +45,7 @@
             </ul>
         </aside>
         
+        <!-- المحتوى الرئيسي -->
         <main class="main-content">
             <div class="header">
                 <h1><i class="fas fa-tasks" style="color: var(--primary); margin-left: 10px;"></i> المهام</h1>
@@ -68,14 +62,14 @@
                 {% endif %}
             {% endwith %}
             
-            <!-- Add Task Button -->
+            <!-- زر إضافة مهمة -->
             <div class="quick-actions">
-                <button type="button" onclick="openModal('addTaskModal')" class="btn btn-primary">
+                <button type="button" onclick="openModal('addTaskModal')" class="btn">
                     <i class="fas fa-plus"></i> إضافة مهمة جديدة
                 </button>
             </div>
             
-            <!-- Tasks Grid -->
+            <!-- بطاقات المهام -->
             {% if tasks %}
             <div class="tasks-grid">
                 {% for task in tasks %}
@@ -121,7 +115,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <i class="fas fa-tasks" style="font-size: 60px; color: var(--border); margin-bottom: 20px;"></i>
+                <i class="fas fa-tasks"></i>
                 <h3>لا يوجد مهام</h3>
                 <p>أضف مهمة جديدة للبدء</p>
             </div>
@@ -129,7 +123,7 @@
         </main>
     </div>
     
-    <!-- Add Task Modal -->
+    <!-- نموذج إضافة مهمة -->
     <div id="addTaskModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addTaskModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3><i class="fas fa-plus-circle"></i> إضافة مهمة جديدة</h3>
@@ -147,7 +141,7 @@
                     <label><i class="fas fa-user"></i> الموظف المسؤول</label>
                     <select name="assigned_to" required title="اختر الموظف أو المشرف">
                         {% for emp in employees %}
-                        <option value="{{ emp.id }}">{{ emp.name }} ({{ 'مشرف' if emp.role == 'مشرف' else 'موظف' }})</option>
+                        <option value="{{ emp.id }}">{{ emp.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -182,7 +176,6 @@
         </div>
     </div>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

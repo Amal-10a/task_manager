@@ -4,28 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الموظفين - إدارة المهام</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        body { position: relative; }
-        .network-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none; }
-        .network-bg canvas { width: 100%; height: 100%; opacity: 0.08; }
-        .dashboard-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
-        .sidebar { width: 260px; background: var(--card-bg); padding: 20px 16px; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
-    </style>
 </head>
 <body>
+    <!-- خلفية الشبكة -->
     <div class="network-bg">
         <canvas id="networkCanvas"></canvas>
     </div>
     
-    <!-- Theme Toggle - Fixed at top left -->
+    <!-- زر تبديل الموضوع -->
     <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">
         <i class="fas fa-moon"></i>
     </button>
     
     <div class="dashboard-container">
+        <!-- القائمة الجانبية -->
         <aside class="sidebar">
             <div class="logo">
                 <div class="logo-icon">
@@ -34,12 +27,12 @@
                 <h2>إدارة المهام</h2>
             </div>
             
-            <div class="user-info" style="flex-direction: column; text-align: center; padding: 20px;">
-                <div class="user-avatar" style="width: 70px; height: 70px; font-size: 28px; margin-bottom: 10px;">
+            <div class="user-info">
+                <div class="user-avatar">
                     <i class="fas fa-user"></i>
                 </div>
-                <div class="name" style="font-size: 16px; font-weight: 600;">{{ user.name }}</div>
-                <div class="role" style="color: var(--primary); font-size: 13px; margin-top: 5px;">{{ user.role }}</div>
+                <div class="name">{{ user.name }}</div>
+                <div class="role">{{ user.role }}</div>
             </div>
             
             <ul class="nav-menu">
@@ -52,14 +45,15 @@
             </ul>
         </aside>
         
+        <!-- المحتوى الرئيسي -->
         <main class="main-content">
             <div class="header">
                 <h1><i class="fas fa-users" style="color: var(--primary); margin-left: 10px;"></i> الموظفين</h1>
             </div>
             
-            <!-- Quick Actions -->
+            <!-- الإجراءات السريعة -->
             <div class="quick-actions">
-                <button type="button" onclick="openModal('addEmployeeModal')" class="btn btn-primary">
+                <button type="button" onclick="openModal('addEmployeeModal')" class="btn">
                     <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
                 </button>
             </div>
@@ -75,7 +69,7 @@
                 {% endif %}
             {% endwith %}
             
-            <!-- Supervisors Section -->
+            <!-- قسم المشرفين -->
             {% if supervisors %}
             <div class="table-card">
                 <h3><i class="fas fa-user-shield"></i> المشرفين</h3>
@@ -83,10 +77,10 @@
                     <table>
                         <thead>
                             <tr>
-                                <th><i class="fas fa-user"></i> الاسم</th>
-                                <th><i class="fas fa-envelope"></i> اسم المستخدم</th>
-                                <th><i class="fas fa-tasks"></i> عدد المهام</th>
-                                <th><i class="fas fa-cogs"></i> الإجراءات</th>
+                                <th>الاسم</th>
+                                <th>اسم المستخدم</th>
+                                <th>عدد المهام</th>
+                                <th>الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -94,7 +88,9 @@
                             <tr>
                                 <td>
                                     <div class="user-info">
-                                        <div class="user-avatar" style="background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);"><i class="fas fa-user-shield"></i></div>
+                                        <div class="user-avatar" style="background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);">
+                                            <i class="fas fa-user-shield"></i>
+                                        </div>
                                         <span>{{ sup.name }}</span>
                                     </div>
                                 </td>
@@ -118,7 +114,7 @@
             </div>
             {% endif %}
 
-            <!-- Employees Grid -->
+            <!-- قسم الموظفين -->
             <div class="table-card">
                 <h3><i class="fas fa-users"></i> الموظفين</h3>
                 
@@ -127,10 +123,10 @@
                     <table>
                         <thead>
                             <tr>
-                                <th><i class="fas fa-user"></i> الاسم</th>
-                                <th><i class="fas fa-envelope"></i> اسم المستخدم</th>
-                                <th><i class="fas fa-tasks"></i> عدد المهام</th>
-                                <th><i class="fas fa-cogs"></i> الإجراءات</th>
+                                <th>الاسم</th>
+                                <th>اسم المستخدم</th>
+                                <th>عدد المهام</th>
+                                <th>الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -138,7 +134,9 @@
                             <tr>
                                 <td>
                                     <div class="user-info">
-                                        <div class="user-avatar"><i class="fas fa-user"></i></div>
+                                        <div class="user-avatar">
+                                            <i class="fas fa-user"></i>
+                                        </div>
                                         <span>{{ emp.name }}</span>
                                     </div>
                                 </td>
@@ -161,7 +159,7 @@
                 </div>
                 {% else %}
                 <div class="empty-state">
-                    <i class="fas fa-users" style="font-size: 60px; color: var(--border); margin-bottom: 20px;"></i>
+                    <i class="fas fa-users"></i>
                     <h3>لا يوجد موظفين</h3>
                     <p>أضف موظفين جدد للبدء</p>
                 </div>
@@ -170,7 +168,7 @@
         </main>
     </div>
     
-    <!-- Add Employee Modal -->
+    <!-- نموذج إضافة موظف -->
     <div id="addEmployeeModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addEmployeeModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3><i class="fas fa-user-plus"></i> إضافة مستخدم جديد</h3>
@@ -189,7 +187,7 @@
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-user-tag"></i> نوع المستخدم</label>
-                    <select name="user_type" required title="اختر نوع المستخدم">
+                    <select name="user_type" required>
                         <option value="موظف">موظف</option>
                         <option value="مشرف">مشرف</option>
                     </select>
@@ -206,7 +204,6 @@
         </div>
     </div>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

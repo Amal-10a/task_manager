@@ -1,4 +1,6 @@
-// Network Animation
+/* ========================================
+   Network Animation - خلفية الشبكة
+   ======================================== */
 const canvas = document.getElementById('networkCanvas');
 if (canvas) {
     const ctx = canvas.getContext('2d');
@@ -55,7 +57,7 @@ if (canvas) {
         const colors = getColors();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Draw connections
+        // رسم الخطوط
         for (let i = 0; i < particles.length; i++) {
             for (let j = i + 1; j < particles.length; j++) {
                 const dx = particles[i].x - particles[j].x;
@@ -73,46 +75,61 @@ if (canvas) {
             }
         }
         
-        // Update and draw particles
-        particles.forEach(particle => {
-            particle.update();
-            particle.draw();
+        // تحديث ورسم الجزيئات
+        particles.forEach(p => {
+            p.update();
+            p.draw();
         });
         
         requestAnimationFrame(animate);
     }
     
-    // Initialize
     resizeCanvas();
     initParticles();
     animate();
     
-    // Handle resize
     window.addEventListener('resize', () => {
         resizeCanvas();
         initParticles();
     });
 }
 
-// Theme Toggle
+/* ========================================
+   Theme Toggle - تبديل الموضوع
+   ======================================== */
 function toggleTheme() {
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    // Update icon
+    
+    // تحديث أيقونة الزر
     const icon = document.querySelector('.theme-toggle i');
     if (icon) {
-        icon.classList.toggle('fa-moon');
-        icon.classList.toggle('fa-sun');
+        if (document.body.classList.contains('dark')) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        } else {
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
+        }
     }
 }
 
-// Initialize theme on load
-if (localStorage.getItem('theme') === 'dark' || 
-    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+// تهيئة الموضوع عند التحميل
+if (localStorage.getItem('theme') === 'dark') {
     document.body.classList.add('dark');
+    // تحديث أيقونة الزر
+    document.addEventListener('DOMContentLoaded', () => {
+        const icon = document.querySelector('.theme-toggle i');
+        if (icon) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        }
+    });
 }
 
-// Auto-hide alerts
+/* ========================================
+   Alerts - إخفاء التنبيهات تلقائياً
+   ======================================== */
 setTimeout(() => {
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
@@ -122,12 +139,9 @@ setTimeout(() => {
     });
 }, 5000);
 
-// Confirm delete actions
-function confirmDelete(message) {
-    return confirm(message || 'هل أنت متأكد من الحذف؟');
-}
-
-// Modal functions
+/* ========================================
+   Modal - النوافذ المنبثقة
+   ======================================== */
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
@@ -142,15 +156,29 @@ function closeModal(modalId) {
     }
 }
 
-// Close modal when clicking outside
 function closeModalOnOverlay(event, modalId) {
     if (event.target.classList.contains('modal-overlay')) {
         closeModal(modalId);
     }
 }
 
-// Task status color coding
+// إغلاق النافذة عند الضغط على Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modals = document.querySelectorAll('.modal-overlay');
+        modals.forEach(modal => {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        });
+    }
+});
+
+/* ========================================
+   Status & Priority Colors - ألوان الحالة والأولوية
+   ======================================== */
 document.addEventListener('DOMContentLoaded', function() {
+    // ألوان الحالة
     const statusBadges = document.querySelectorAll('.status-badge');
     statusBadges.forEach(badge => {
         const text = badge.textContent;
@@ -163,8 +191,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Priority color coding
-    const priorityElements = document.querySelectorAll('.priority');
+    // ألوان الأولوية
+    const priorityElements = document.querySelectorAll('.priority-badge, .priority');
     priorityElements.forEach(el => {
         const text = el.textContent;
         if (text.includes('عالية')) {
