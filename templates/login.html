@@ -28,7 +28,6 @@
     
     <div class="login-container">
         <div class="logo">
-            <!-- ضع صورة اللوقو هنا -->
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="شعار الشركة" class="logo-image" style="max-width: 150px; display: none;" id="companyLogo">
             <div class="logo-icon" id="defaultIcon">
                 <i class="fas fa-tasks"></i>
@@ -69,14 +68,14 @@
                 </div>
             </div>
             
-<button type="submit" class="btn">
+            <button type="submit" class="btn">
                 <i class="fas fa-sign-in-alt"></i>
                 تسجيل الدخول
             </button>
         </form>
         
         <div class="github-login">
-            <a href="{{ url_for('github.login') }}" class="btn btn-github">
+            <a href="{{ url_for('github_login') }}" class="btn btn-github">
                 <i class="fab fa-github"></i>
                 تسجيل الدخول عبر GitHub
             </a>
