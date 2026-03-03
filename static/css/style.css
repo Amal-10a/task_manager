@@ -673,14 +673,24 @@ tr:hover { background: var(--bg); }
    Laptop/Tablet Mode - الوضع اللابتوب
    ======================================== */
 @media (min-width: 769px) and (max-width: 1200px) {
+    .dashboard-container {
+        min-height: 100vh;
+    }
+    
     .sidebar {
         width: 220px;
         min-width: 220px;
         padding: 15px 12px;
+        flex-shrink: 0;
     }
     
     .sidebar .logo h2 {
         font-size: 16px;
+    }
+    
+    .nav-menu {
+        display: flex !important;
+        flex-direction: column;
     }
     
     .nav-menu a {
@@ -693,12 +703,18 @@ tr:hover { background: var(--bg); }
     }
     
     .main-content {
-        padding: 15px;
+        flex: 1;
+        padding: 20px;
+        min-width: 0;
+    }
+    
+    .header h1 {
+        font-size: 20px;
     }
     
     .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
     }
     
     .stat-card {
