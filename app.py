@@ -11,8 +11,8 @@ app.secret_key = 'task_manager_secret_key_2024'
 DB_NAME = "task_manager.db"
 
 # GitHub OAuth configuration
-GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
-GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '')
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_OAUTH_CLIENT_ID', '')
+GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_OAUTH_CLIENT_SECRET', '')
 GITHUB_REDIRECT_URI = os.environ.get('GITHUB_REDIRECT_URI', '')
 
 def init_db():
